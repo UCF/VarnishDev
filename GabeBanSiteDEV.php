@@ -64,58 +64,65 @@
 		<!-- This is the Purge URL button -->
                 <input type="submit" value="Purge URL" onclick="purge_varnish()" />
              
-		<!-- This JS Script will grab the settings info and run the purge function-->
-		<script type="text/javascript">
+                <!-- This JS Script will grab the settings info and run the purge function-->
+                <script type="text/javascript">
                         
-                    function purge_varnish(){ 
-                    alert("hello world!");
-                    
+                //Main URL Purge Function 
+                //Should only work when puge button is clicked,
+                // however the save settings button also seems to active it for some reason. 
+                function purge_varnish(){ 
+                    alert("Let the Purge Commence!");
                     <?php 
+                    
+                    //Set up the socket connection to varnish
                      $errno = (integer) "";
                      $errstr = (string) "";
-                    // $varnish_sock = fsockopen("127.0.0.1", "80", $errno, $errstr, 10); 
                      $varnish_sock = fsockopen(get_option('ip_address'), get_option('port_number'), $errno, $errstr, 10);
+                     
+                    //Check if the settings provided connect to a varnish socket
                     if (!$varnish_sock) {
                         error_log("Varnish connect error: ". $errstr ."(". $errno .")");
-                    }else {
+                    } else {
                      
+                       //Take the user's URL
                        $txtUrl = get_option('url_page');
-                       $txtUrl = str_replace("http://", "", $txtUrl); 
                        
+                       //We need the host name and page
+                       //So we perform a few operations to get those bits of information from the URL
+                       $txtUrl = str_replace("http://", "", $txtUrl); 
                        $hostname = substr($txtUrl, 0, strpos($txtUrl, '/'));
                        $url = substr($txtUrl, strpos($txtUrl, '/'), strlen($txtUrl));
                         
-                      // Build the request
-                     $cmd = "PURGE ". $url ." HTTP/1.0\r\n";
-                     $cmd .= "Host: ". $hostname ."\r\n";
-                     $cmd .= "Connection: Close\r\n";
-                    // Finish the request
-                     $cmd .= "\r\n";
-                     // Send the request
-                    // echo "Sending request: <blockquote>". nl2br($cmd) ."</blockquote>";
-                    fwrite($varnish_sock, $cmd);
-                    // Get the reply
-                    //echo "Received answer: <blockquote>";
-                    $response = "";
-                    while (!feof($varnish_sock)) {
-                       $response .= fgets($varnish_sock, 128);
-                       }
-                    // echo nl2br($response);
-                    // echo "</blockquote>";
+                        // Build the request
+                        $cmd = "PURGE ". $url ." HTTP/1.0\r\n";
+                        $cmd .= "Host: ". $hostname ."\r\n";
+                        $cmd .= "Connection: Close\r\n";
+                        $cmd .= "\r\n";
+                     
+                        // Send the request to the socket
+                         fwrite($varnish_sock, $cmd);
+                    
+                        // Get the reply (I may just remove this since I'm not using it)
+                        $response = "";
+                        while (!feof($varnish_sock)) {
+                            $response .= fgets($varnish_sock, 128);
+                        }
                       }
+                     
+                     //Close socket connection
                      fclose($varnish_sock); 
+                     
                      ?>
-                             
-                     } 
-		</script>
+                      
+                } 
+                
+                </script>
 		
 		</form>
 		</div>
-	<?php }
+	<?php } //End of initialization function
 	
-        //if (isset($_POST['PButton'])) {
-          //  purge_varnish();
-      //  }
+      
 	//Function to remove settings upon deactivation of the plugin
 	function deactivate() {
 		delete_option('ip_address');
@@ -127,19 +134,7 @@
 	register_deactivation_hook(__FILE__, 'deactivate');
 	
        
-	//Create PURGE function
-        
-         //TO DO:
-	//Execute purge function 
-	//Then show output somehow
-        
-	//Test code to grab information stored in the settings page
-	/*$var1 = get_option('port_number');
-	echo 'HELLOWORLDIAMGABEN'; 
-
-         <input type="text" value="<?php isset($_POST['txtURL']) ? $_POST['txtURL'] : '' ?>" name="txtURL" class="defaultText" title="http://yourhost/some-url.html" />
-            <input type="submit"  name="PButton" value="Purge URL" />
-         *          */
+	//Might want to work on having a method to output purge results to user
 
 	//EOF
 	?>
