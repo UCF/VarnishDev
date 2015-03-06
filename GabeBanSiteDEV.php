@@ -62,47 +62,48 @@
 		<?php submit_button(); ?> 
 		
 		<!-- This is the Purge URL button -->
-                <input type="submit" value="Purge URL" onclick="purge_test()" />
-                <button onclick="purge_test()">Purge URL</button>
-                
+                <input type="submit" value="Purge URL" onclick="purge_varnish()" />
+             
 		<!-- This JS Script will grab the settings info and run the purge function-->
 		<script type="text/javascript">
-		        function purge_test(){
-				var p1 = <?php echo get_option('port_number'); ?>;
-				alert(p1);
-				alert("hello world!");
-			}
                         
                     function purge_varnish(){ 
                     alert("hello world!");
                     
                     <?php 
-                    
                      $errno = (integer) "";
                      $errstr = (string) "";
-                     $varnish_sock = fsockopen("127.0.0.1", "80", $errno, $errstr, 10); 
-                     if (!$varnish_sock) {
+                    // $varnish_sock = fsockopen("127.0.0.1", "80", $errno, $errstr, 10); 
+                     $varnish_sock = fsockopen(get_option('ip_address'), get_option('port_number'), $errno, $errstr, 10);
+                    if (!$varnish_sock) {
                         error_log("Varnish connect error: ". $errstr ."(". $errno .")");
-                    } else {
+                    }else {
+                     
+                       $txtUrl = get_option('url_page');
+                       $txtUrl = str_replace("http://", "", $txtUrl); 
+                       
+                       $hostname = substr($txtUrl, 0, strpos($txtUrl, '/'));
+                       $url = substr($txtUrl, strpos($txtUrl, '/'), strlen($txtUrl));
+                        
                       // Build the request
-                     $cmd = "PURGE ". "/readme.html" ." HTTP/1.0\r\n";
-                     $cmd .= "Host: ". "10.192.4.105" ."\r\n";
+                     $cmd = "PURGE ". $url ." HTTP/1.0\r\n";
+                     $cmd .= "Host: ". $hostname ."\r\n";
                      $cmd .= "Connection: Close\r\n";
                     // Finish the request
                      $cmd .= "\r\n";
                      // Send the request
-                     echo "Sending request: <blockquote>". nl2br($cmd) ."</blockquote>";
-                     fwrite($varnish_sock, $cmd);
+                    // echo "Sending request: <blockquote>". nl2br($cmd) ."</blockquote>";
+                    fwrite($varnish_sock, $cmd);
                     // Get the reply
-                    echo "Received answer: <blockquote>";
+                    //echo "Received answer: <blockquote>";
                     $response = "";
                     while (!feof($varnish_sock)) {
                        $response .= fgets($varnish_sock, 128);
                        }
-                     echo nl2br($response);
-                     echo "</blockquote>";
+                    // echo nl2br($response);
+                    // echo "</blockquote>";
                       }
-                     fclose($varnish_sock);
+                     fclose($varnish_sock); 
                      ?>
                              
                      } 
