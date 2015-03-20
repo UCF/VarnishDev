@@ -6,73 +6,36 @@
  * Author: Gabriel Hotchner
  */
 
-	//Hook  to add an admin menu for the plugin
-	add_action('admin_menu','plugin_setup_menu');
-	
-	//Function to create settings page
-	function plugin_setup_menu(){
-		add_options_page(
+class VarnishSiteBan {
+   
+    function VarnishSiteBan() {
+        
+        $address_option = "127.0.0.1";
+        $port_option = "80";
+        $page_option = "https://www.mysite.com/some/page";
+        
+        if(!get_option("address_option"))
+            add_option("address_option", $address_option, '', 'yes');
+        if(!get_option("port_option"))
+            add_option("port_option", $port_option, '', 'yes');
+        if(!get_option("page_option"))
+            add_option("page_option", $page_option, '', 'yes');
+        
+        add_action('admin_menu', array(&$this, 'CreateMenu'));
+    } 
+    
+  
+    function CreateMenu() {
+                add_options_page(
 			'My Varnish Settings',
 			'HotchDev_Template',
-			'manage_options',
+			1,
 			'varnish-menu',
-			'varnish_init_func');
-	}
-	
-	//Hook to initialize settings page
-	add_action( 'admin_init', 'my_plugin_settings' );
-	
-	
-	//Register the settings we want on the settings page
-	function my_plugin_settings() {
-            register_setting( 'my-plugin-settings-group', 'ip_address' );
-            register_setting( 'my-plugin-settings-group', 'port_number' );
-            register_setting( 'my-plugin-settings-group', 'url_page' );
-	}
-	
-	//Function to set up the style and look of the setting page
-	function varnish_init_func() {
-		?>
-		
-		<!-- This is the main Div -->
-		<div class="wrap">
-		<h2>Varnish Plugin Settings</h2>
-
-		<form method="post" action="options.php">
-			<?php settings_fields( 'my-plugin-settings-group' ); ?>
-			<?php do_settings_sections( 'my-plugin-settings-group' ); ?>
-		<table class="form-table">
-			<tr valign="top">
-			<th scope="row">IP Address</th>
-			<td><input type="text" name="ip_address" value="<?php echo esc_attr( get_option('ip_address', '127.0.0.1') ); ?>" /></td>
-			</tr>
-		
-			<tr valign="top">
-			<th scope="row">Port</th>
-			<td><input type="text" name="port_number" value="<?php echo esc_attr( get_option('port_number', '80') ); ?>" /></td>
-			</tr>
-
-			<tr valign="top">
-			<th scope="row">URL</th>
-			<td><input type="text" name="url_page" value="<?php echo esc_attr( get_option('url_page', 'https://www.mysite.com/some/page') ); ?>" /></td>
-			</tr>
-		</table>
-		
-		<!-- This is the save settings button -->
-		<?php submit_button(); ?> 
-		
-		<!-- This is the Purge URL button -->
-                <input type="submit" value="Purge URL" onclick="purge_varnish()" />
-             
-                <!-- This JS Script will grab the settings info and run the purge function-->
-                <script type="text/javascript">
-                        
-                //Main URL Purge Function 
-                //Should only work when puge button is clicked,
-                // however the save settings button also seems to active it for some reason. 
-                function purge_varnish(){ 
-                    alert("Let the Purge Commence!");
-                    <?php 
+			array(&$this,'varnish_init_menu'));
+    }
+    
+    function purge_varnish(){ 
+                    //alert("Let the Purge Commence!");
                     
                     //Set up the socket connection to varnish
                      $errno = (integer) "";
@@ -110,32 +73,73 @@
                       }
                      
                      //Close socket connection
-                     fclose($varnish_sock); 
-                     
-                     ?>
-                      
+                     fclose($varnish_sock);    
                 } 
                 
-                </script>
+                
+    
+    function varnish_init_menu(){
+        if(current_user_can('administrator')) {
+            if($_SERVER["REQUEST_METHOD"] == "POST") {
+                if(isset($_POST['save_settings'])) {
+                    if(isset($_POST["address_option"]))
+			update_option("address_option", trim(strip_tags($_POST["address_option"])));
+                    if(isset($_POST["port_option"]))
+			update_option("port_option", (int)trim(strip_tags($_POST["port_option"])));
+                    if(isset($_POST["page_option"]))
+			update_option("page_option", trim(strip_tags($_POST["page_option"])));
+                    
+?>
+        <div class="updated"><p><?php echo "Settings Saved!"; ?></p></div>
+<?php
+            }
+            if(isset($_POST['purge_button'])){
+                $this->purge_varnish();
+            }
+         
+            
+        }
+        //Enter html code:
+?>
+        
+        
+        <div class="wrap">
+            <h2><?php echo "Varnish Plugin Settings"; ?></h2>
+            <form method="post" action="<?php echo $_SERVER['REQUEST_URI'] ?>">
+                <table class="form-table">
+			<tr valign="top">
+			<th scope="row">IP Address</th>
+			<td><input type="text" name="address_option" value="<?php echo esc_attr( get_option('address_option', '127.0.0.1') ); ?>" /></td>
+			</tr>
 		
-		</form>
-		</div>
-	<?php } //End of initialization function
-	
-      
-	//Function to remove settings upon deactivation of the plugin
-	function deactivate() {
-		delete_option('ip_address');
-		delete_option('port_number');
-		delete_option('time_delay');
-	}
-	
-	//Hook to run the deactivate function upon deactivation
-	register_deactivation_hook(__FILE__, 'deactivate');
-	
-       
-	//Might want to work on having a method to output purge results to user
+			<tr valign="top">
+			<th scope="row">Port</th>
+			<td><input type="text" name="port_option" value="<?php echo esc_attr( get_option('port_option', '80') ); ?>" /></td>
+			</tr>
 
-	//EOF
-	?>
+			<tr valign="top">
+			<th scope="row">URL</th>
+			<td><input type="text" name="page_option" value="<?php echo esc_attr( get_option('page_option', 'https://www.mysite.com/some/page') ); ?>" /></td>
+			</tr>
+		</table>
+                
+                <p class="submit">
+                    <input type="submit" class="button-primary" name="save_settings" value="<?php echo "Save Changes"; ?>"> 
+                    <input type="submit" class="button-secondary" name="purge_button" value="<?php echo "Purge URL"; ?>">
+                </p>
+                
+            </form>
+        </div>
+            
+<?php //Done with html
+               
+        }
+    }
+    
+    
+    
+}
 
+$siteBan = & new VarnishSiteBan();
+
+?>
