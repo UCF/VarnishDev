@@ -77,20 +77,21 @@ acl purge {
 
 
 sub vcl_recv {
-    # allow PURGE from localhost and ....
-    #if (req.method == "PURGE") {
-    #            if (!client.ip ~ purge) {
-    #                    return(synth(405,"Not allowed."));
-    #            }
-    #            return (purge);
-    #    }
-
+     allow PURGE from localhost and ....
     if (req.method == "PURGE") {
- 	if (client.ip !~ purge) {
-      		return(synth(403, "Not allowed"));
-    	}
-   	ban("obj.http.x-url ~ " + req.url); # Assumes req.url is a regex. This might be a bit too simple
-  	}
+                if (!client.ip ~ purge) {
+                        return(synth(405,"Not allowed."));
+                }
+                return (purge);
+        }
+
+  #Ban lurker friendly Purge:
+  #  if (req.method == "PURGE") {
+  #	if (client.ip !~ purge) {
+  #    		return(synth(403, "Not allowed"));
+  # 	}
+  #	ban("obj.http.x-url ~ " + req.url); # Assumes req.url is a regex. This might be a bit too simple
+  #	}
  
 
     

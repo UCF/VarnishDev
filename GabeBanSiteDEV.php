@@ -55,7 +55,7 @@ class VarnishSiteBan {
                     //Set up the socket connection to varnish
                      $errno = (integer) "";
                      $errstr = (string) "";
-                     $varnish_sock = fsockopen(get_option('ip_address'), get_option('port_number'), $errno, $errstr, 10);
+                     $varnish_sock = fsockopen(get_option('address_option'), get_option('port_option'), $errno, $errstr, 10);
                      
                     //Check if the settings provided connect to a varnish socket
                     if (!$varnish_sock) {
@@ -63,7 +63,7 @@ class VarnishSiteBan {
                     } else {
                      
                         //Take the user's URL
-                       $txtUrl = get_option('url_page');
+                       $txtUrl = get_option('page_option');
                        
                        //We need the host name and page
                        //So we perform a few operations to get those bits of information from the URL
@@ -80,6 +80,7 @@ class VarnishSiteBan {
                         //Testing some Ban commands: 
                         //$cmd = "ban req.http.host == $hostname && req.url ~ $url\n";
                         //$cmd = "ban req.http.host == " . $hostname . " && req.url ~ " . $url;
+                        //$cmd = "ban req.http.host == " . "http://ghotchnerdev.smca.ucf.edu/" . " && req.url ~ " . "/readme.html$";
                                 
                         // Send the request to the socket
                          fwrite($varnish_sock, $cmd);
