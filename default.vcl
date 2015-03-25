@@ -77,7 +77,7 @@ acl purge {
 
 
 sub vcl_recv {
-     allow PURGE from localhost and ....
+    # allow PURGE from localhost and ....
     if (req.method == "PURGE") {
                 if (!client.ip ~ purge) {
                         return(synth(405,"Not allowed."));
