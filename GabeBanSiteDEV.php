@@ -6,14 +6,27 @@
  * Author: Gabriel Hotchner
  */
 
+//The plugin currently only performs URL page purges.
+//Only wokrs on Varnish 4.0
+
+/*Functionality to add:
+ * Varnish 3.0 support
+ * Support ban commands
+ * Add option to use admin port
+ */
+    
+
 class VarnishSiteBan {
    
+    //Creates the plugin
     function VarnishSiteBan() {
         
+        //Default Settings
         $address_option = "127.0.0.1";
         $port_option = "80";
         $page_option = "https://www.mysite.com/some/page";
         
+        //Add the settings
         if(!get_option("address_option"))
             add_option("address_option", $address_option, '', 'yes');
         if(!get_option("port_option"))
@@ -21,10 +34,11 @@ class VarnishSiteBan {
         if(!get_option("page_option"))
             add_option("page_option", $page_option, '', 'yes');
         
+        //Create the admin menu
         add_action('admin_menu', array(&$this, 'CreateMenu'));
     } 
     
-  
+    //Creates the plugin menu
     function CreateMenu() {
                 add_options_page(
 			'My Varnish Settings',
@@ -34,6 +48,7 @@ class VarnishSiteBan {
 			array(&$this,'varnish_init_menu'));
     }
     
+    //Purges a URL page
     function purge_varnish(){ 
                     //alert("Let the Purge Commence!");
                     
@@ -47,7 +62,7 @@ class VarnishSiteBan {
                         error_log("Varnish connect error: ". $errstr ."(". $errno .")");
                     } else {
                      
-                       //Take the user's URL
+                        //Take the user's URL
                        $txtUrl = get_option('url_page');
                        
                        //We need the host name and page
@@ -56,12 +71,16 @@ class VarnishSiteBan {
                        $hostname = substr($txtUrl, 0, strpos($txtUrl, '/'));
                        $url = substr($txtUrl, strpos($txtUrl, '/'), strlen($txtUrl));
                         
-                        // Build the request
+                        // Build the request 
                         $cmd = "PURGE ". $url ." HTTP/1.0\r\n";
                         $cmd .= "Host: ". $hostname ."\r\n";
                         $cmd .= "Connection: Close\r\n";
                         $cmd .= "\r\n";
-                     
+               
+                        //Testing some Ban commands: 
+                        //$cmd = "ban req.http.host == $hostname && req.url ~ $url\n";
+                        //$cmd = "ban req.http.host == " . $hostname . " && req.url ~ " . $url;
+                                
                         // Send the request to the socket
                          fwrite($varnish_sock, $cmd);
                     
@@ -77,7 +96,7 @@ class VarnishSiteBan {
                 } 
                 
                 
-    
+    //Creates the style of the settings page
     function varnish_init_menu(){
         if(current_user_can('administrator')) {
             if($_SERVER["REQUEST_METHOD"] == "POST") {
@@ -139,7 +158,6 @@ class VarnishSiteBan {
     
     
 }
-
 $siteBan = & new VarnishSiteBan();
 
 ?>
