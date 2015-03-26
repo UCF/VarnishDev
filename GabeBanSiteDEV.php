@@ -72,16 +72,24 @@ class VarnishSiteBan {
                        $url = substr($txtUrl, strpos($txtUrl, '/'), strlen($txtUrl));
                         
                         // Build the request 
-                        $cmd = "PURGE ". $url ." HTTP/1.0\r\n";
+                        /*$cmd = "PURGE ". $url ." HTTP/1.0\r\n";
                         $cmd .= "Host: ". $hostname ."\r\n";
                         $cmd .= "Connection: Close\r\n";
-                        $cmd .= "\r\n";
+                        $cmd .= "\r\n";*/
                
+                       
                         //Testing some Ban commands: 
                         //$cmd = "ban req.http.host == $hostname && req.url ~ $url\n";
-                        //$cmd = "ban req.http.host == " . $hostname . " && req.url ~ " . $url;
-                        //$cmd = "ban req.http.host == " . "http://ghotchnerdev.smca.ucf.edu/" . " && req.url ~ " . "/readme.html$";
-                                
+                        // $cmd = "ban req.http.host == " . $hostname . " && req.url ~ " . $url . "$";
+                        // $cmd = "ban req.http.host == " . "http://ghotchnerdev.smca.ucf.edu/" . " && req.url ~ " . "/readme.html$";
+                       
+                       
+                       $cmd = "BAN ". $url ." HTTP/1.0\r\n";
+                       $cmd .= "Host: ". $hostname ."\r\n";
+                       $cmd .= "Connection: Close\r\n";
+                       $cmd .= "\r\n";
+                      // $cmd = "ban req.url ~ ^$url && req.http.host == $hostname\n";
+                       
                         // Send the request to the socket
                          fwrite($varnish_sock, $cmd);
                     
