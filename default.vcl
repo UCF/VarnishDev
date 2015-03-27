@@ -97,8 +97,8 @@ sub vcl_recv {
 
         # Throw a synthetic page so the
         # request won't go to the backend.
-        #return(synth(200, "Ban added"));
-	return(synth(200,req.url));
+        return(synth(200, "Ban added"));
+	
     }
 
    # if (req.method != "GET" &&
