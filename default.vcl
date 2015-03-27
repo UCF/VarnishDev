@@ -24,22 +24,12 @@ backend default {
     .port = "8080";
 }
 
-#sub vcl_recv {
-    # Happens before we check if we have this in cache already.
-    # 
-    # Typically you clean up the request here, removing cookies you don't need,
-    # rewriting the request, etc.
-#}
-
 sub vcl_backend_response {
     # Happens after we have read the response headers from the backend.
      
     # Here you clean the response headers, removing silly Set-Cookie headers
     # and other mistakes your backend does.
   
-  #ban code:
-  set beresp.http.x-url = bereq.url;
-
   if (beresp.status >= 500 && beresp.status < 600) {
         unset beresp.http.Cache-Control;
         set beresp.http.Cache-Control = "no-cache, max-age=0, must-revalidate";
@@ -48,6 +38,10 @@ sub vcl_backend_response {
         set beresp.uncacheable = true;
         return(deliver);
     }
+ 
+ #ban code:
+  set beresp.http.x-url = bereq.url;
+
 }
 
 sub vcl_deliver {
@@ -62,8 +56,8 @@ sub vcl_deliver {
                 set resp.http.X-Cache = "MISS";
         }
 	  
-	  #Ban code:
-	  unset resp.http.x-url; # Optional
+ 	 #Ban code:
+	unset resp.http.x-url; # Optional
 }
 #########################################################
 #The Following functions will allow for Bans and Purges:#
@@ -73,8 +67,6 @@ acl purge {
         "localhost";
         "10.192.4.105";
 }
-
-
 
 sub vcl_recv {
     # allow PURGE from localhost and ....
@@ -105,23 +97,24 @@ sub vcl_recv {
 
         # Throw a synthetic page so the
         # request won't go to the backend.
-        return(synth(200, "Ban added"));
+        #return(synth(200, "Ban added"));
+	return(synth(200,req.url));
     }
 
-    if (req.method != "GET" &&
-      req.method != "HEAD" &&
-      req.method != "PUT" &&
-      req.method != "POST" &&
-      req.method != "TRACE" &&
-      req.method != "OPTIONS" &&
-            req.method != "DELETE") {
-        /* Non-RFC2616 or CONNECT which is weird. */
-        return (pipe);
-    }
-    if (req.method != "GET" && req.method != "HEAD") {
-        /* We only deal with GET and HEAD by default */
-        return (pass);
-    }
+   # if (req.method != "GET" &&
+   #   req.method != "HEAD" &&
+   #   req.method != "PUT" &&
+   #   req.method != "POST" &&
+   #   req.method != "TRACE" &&
+   #   req.method != "OPTIONS" &&
+   #         req.method != "DELETE") {
+   #     /* Non-RFC2616 or CONNECT which is weird. */
+   #    return (pipe);
+   # }
+   # if (req.method != "GET" && req.method != "HEAD") {
+   #     /* We only deal with GET and HEAD by default */
+   #     return (pass);
+   # } 
     return (hash);    
 }
 
