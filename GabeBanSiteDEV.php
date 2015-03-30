@@ -71,25 +71,14 @@ class VarnishSiteBan {
                        $hostname = substr($txtUrl, 0, strpos($txtUrl, '/'));
                        $url = substr($txtUrl, strpos($txtUrl, '/'), strlen($txtUrl));
                         
-                        // Build the request 
-                        /*$cmd = "PURGE ". $url ." HTTP/1.0\r\n";
+                        // Build the request (Purge)
+                        $cmd = "PURGE ". $url ." HTTP/1.0\r\n";
                         $cmd .= "Host: ". $hostname ."\r\n";
                         $cmd .= "Connection: Close\r\n";
-                        $cmd .= "\r\n";*/
-               
-                       
-                        //Testing some Ban commands: 
-                        //$cmd = "ban req.http.host == $hostname && req.url ~ $url\n";
-                        // $cmd = "ban req.http.host == " . $hostname . " && req.url ~ " . $url . "$";
-                        // $cmd = "ban req.http.host == " . "http://ghotchnerdev.smca.ucf.edu/" . " && req.url ~ " . "/readme.html$";
-                       
-                       
-                       $cmd = "BAN ". $url ." HTTP/1.0\r\n";
-                       $cmd .= "Host: ". $hostname ."\r\n";
-                       $cmd .= "Connection: Close\r\n";
-                       $cmd .= "\r\n";
-                      // $cmd = "ban req.url ~ ^$url && req.http.host == $hostname\n";
-                       
+                        $cmd .= "\r\n";
+
+                      
+                      
                         // Send the request to the socket
                          fwrite($varnish_sock, $cmd);
                     
@@ -104,6 +93,47 @@ class VarnishSiteBan {
                      fclose($varnish_sock);    
                 } 
                 
+    function banPurge_varnish(){
+        
+                    //Set up the socket connection to varnish
+                     $errno = (integer) "";
+                     $errstr = (string) "";
+                     $varnish_sock = fsockopen(get_option('address_option'), get_option('port_option'), $errno, $errstr, 10);
+                     
+                    //Check if the settings provided connect to a varnish socket
+                    if (!$varnish_sock) {
+                        error_log("Varnish connect error: ". $errstr ."(". $errno .")");
+                    } else {
+                     
+                        //Take the user's URL
+                       $txtUrl = get_option('page_option');
+                       
+                       //We need the host name and page
+                       //So we perform a few operations to get those bits of information from the URL
+                       $txtUrl = str_replace("http://", "", $txtUrl); 
+                       $hostname = substr($txtUrl, 0, strpos($txtUrl, '/'));
+                       $url = substr($txtUrl, strpos($txtUrl, '/'), strlen($txtUrl));
+                       
+                       //Testing some Ban commands: 
+                       $cmd = "BAN ". $url ." HTTP/1.0\r\n";
+                       $cmd .= "Host: ". $hostname ."\r\n";
+                       $cmd .= "Connection: Close\r\n";
+                       $cmd .= "\r\n";
+                       //$cmd = "ban req.url ~ ^$url && req.http.host == $hostname\n";
+                       
+                       // Send the request to the socket
+                       fwrite($varnish_sock, $cmd);
+                    
+                        // Get the reply (I may just remove this since I'm not using it)
+                        $response = "";
+                        while (!feof($varnish_sock)) {
+                            $response .= fgets($varnish_sock, 128);
+                        }
+                      }
+                     
+                     //Close socket connection
+                     fclose($varnish_sock);
+    }
                 
     //Creates the style of the settings page
     function varnish_init_menu(){
@@ -123,6 +153,9 @@ class VarnishSiteBan {
             }
             if(isset($_POST['purge_button'])){
                 $this->purge_varnish();
+            }
+            if(isset($_POST['banPurge_button'])){
+                $this->banPurge_varnish();
             }
          
             
@@ -154,6 +187,8 @@ class VarnishSiteBan {
                 <p class="submit">
                     <input type="submit" class="button-primary" name="save_settings" value="<?php echo "Save Changes"; ?>"> 
                     <input type="submit" class="button-secondary" name="purge_button" value="<?php echo "Purge URL"; ?>">
+                    <input type="submit" class="button-secondary" name="banPurge_button" value="<?php echo "Purge whole Blog"; ?>">
+                
                 </p>
                 
             </form>
