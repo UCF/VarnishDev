@@ -15,7 +15,7 @@
  * Add option to use admin port
  */
     
-
+//Need to add version 3 functionality
 class VarnishSiteBan {
    
     //Creates the plugin
@@ -25,6 +25,7 @@ class VarnishSiteBan {
         $address_option = "127.0.0.1";
         $port_option = "80";
         $page_option = "https://www.mysite.com/some/page";
+        $version_option = 4;
         
         //Add the settings
         if(!get_option("address_option"))
@@ -33,6 +34,8 @@ class VarnishSiteBan {
             add_option("port_option", $port_option, '', 'yes');
         if(!get_option("page_option"))
             add_option("page_option", $page_option, '', 'yes');
+        if(!get_option("version_option"))
+            add_option("version_option", $version_option, '', 'yes');
         
         //Create the admin menu
         add_action('admin_menu', array(&$this, 'CreateMenu'));
@@ -91,8 +94,10 @@ class VarnishSiteBan {
                      
                      //Close socket connection
                      fclose($varnish_sock);    
-                } 
+                }
                 
+    //This function will eventually purge a whole blog, 
+    //right now I'm working on getting the bans working properly
     function banPurge_varnish(){
         
                     //Set up the socket connection to varnish
@@ -146,7 +151,8 @@ class VarnishSiteBan {
 			update_option("port_option", (int)trim(strip_tags($_POST["port_option"])));
                     if(isset($_POST["page_option"]))
 			update_option("page_option", trim(strip_tags($_POST["page_option"])));
-                    
+                    if(isset($_POST["version_option"]))
+			update_option("version_option", (int)trim(strip_tags($_POST["version_option"])));
 ?>
         <div class="updated"><p><?php echo "Settings Saved!"; ?></p></div>
 <?php
@@ -182,12 +188,22 @@ class VarnishSiteBan {
 			<th scope="row">URL</th>
 			<td><input type="text" name="page_option" value="<?php echo esc_attr( get_option('page_option', 'https://www.mysite.com/some/page') ); ?>" /></td>
 			</tr>
+                        
+                        <tr valign="top">
+                        <th scope="row">Varnish Version</th>
+                        <td>
+                            <select id="varnishVersion" name="version_option">
+				<option value="4">V4: PURGE</option>
+                		<option value="3">V3: N/A</option>
+                            </select>
+                        </td>
+                        
 		</table>
                 
                 <p class="submit">
                     <input type="submit" class="button-primary" name="save_settings" value="<?php echo "Save Changes"; ?>"> 
                     <input type="submit" class="button-secondary" name="purge_button" value="<?php echo "Purge URL"; ?>">
-                    <input type="submit" class="button-secondary" name="banPurge_button" value="<?php echo "Purge whole Blog"; ?>">
+                    <input type="submit" class="button-secondary" name="banPurge_button" value="<?php echo "Purge/Ban whole Blog"; ?>">
                 
                 </p>
                 
