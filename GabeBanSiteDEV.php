@@ -39,6 +39,7 @@ class VarnishSiteBan {
         
         //Create the admin menu
         add_action('admin_menu', array(&$this, 'CreateMenu'));
+        //add_action( 'admin_init', array(&$this, 'CreateMenu'));
     } 
     
     //Creates the plugin menu
@@ -152,7 +153,8 @@ class VarnishSiteBan {
                     if(isset($_POST["page_option"]))
 			update_option("page_option", trim(strip_tags($_POST["page_option"])));
                     if(isset($_POST["version_option"]))
-			update_option("version_option", (int)trim(strip_tags($_POST["version_option"])));
+			update_option("version_option", $_POST["version_option"]);
+                    
 ?>
         <div class="updated"><p><?php echo "Settings Saved!"; ?></p></div>
 <?php
@@ -193,11 +195,10 @@ class VarnishSiteBan {
                         <th scope="row">Varnish Version</th>
                         <td>
                             <select id="varnishVersion" name="version_option">
-				<option value="4">V4: PURGE</option>
-                		<option value="3">V3: N/A</option>
+				<option value="4"<?php if(get_option("version_option") == 4) echo " selected"; ?>>V4: PURGE</option>
+                		<option value="3"<?php if(get_option("version_option") == 3) echo " selected"; ?>>V3: N/A</option>
                             </select>
-                        </td>
-                        
+                        </td>  
 		</table>
                 
                 <p class="submit">
