@@ -1,22 +1,7 @@
-#
-# This is an example VCL file for Varnish.
-#
-# It does not do anything by default, delegating control to the
-# builtin VCL. The builtin VCL is called when there is no explicit
-# return statement.
-#
-# See the VCL chapters in the Users Guide at https://www.varnish-cache.org/docs/
-# and http://varnish-cache.org/trac/wiki/VCLExamples for more examples.
-
-# Marker to tell the VCL compiler that this VCL has been adapted to the
-# new 4.0 format.
 vcl 4.0;
 
-
-######################
-import std;
-import directors;
-######################
+import std;        
+import directors;  
 
 # Default backend definition. Set this to point to your content server.
 backend default {
@@ -25,10 +10,6 @@ backend default {
 }
 
 sub vcl_backend_response {
-    # Happens after we have read the response headers from the backend.
-     
-    # Here you clean the response headers, removing silly Set-Cookie headers
-    # and other mistakes your backend does.
   
   if (beresp.status >= 500 && beresp.status < 600) {
         unset beresp.http.Cache-Control;
@@ -45,10 +26,6 @@ sub vcl_backend_response {
 }
 
 sub vcl_deliver {
-     #Happens when we have all the pieces we need, and are about to send the
-     #response to the client.
-     
-     #You can do accounting or modifying the final object here.
 
 	if (obj.hits > 0) {
                 set resp.http.X-Cache = "HIT";
@@ -59,6 +36,7 @@ sub vcl_deliver {
  	 #Ban code:
 	unset resp.http.x-url; # Optional
 }
+
 #########################################################
 #The Following functions will allow for Bans and Purges:#
 #########################################################
@@ -77,16 +55,7 @@ sub vcl_recv {
                 return (purge);
         }
 
-  #Ban lurker friendly Purge:
-  #  if (req.method == "PURGE") {
-  #	if (client.ip !~ purge) {
-  #    		return(synth(403, "Not allowed"));
-  # 	}
-  #	ban("obj.http.x-url ~ " + req.url); # Assumes req.url is a regex. This might be a bit too simple
-  #	}
- 
-
-    
+     
     if(req.method == "BAN"){
 	#Same ACL check as above:
 	if(!client.ip ~ purge) {
@@ -100,21 +69,27 @@ sub vcl_recv {
         return(synth(200, "Ban added"));
 	
     }
+   
+   
+   if (req.method != "GET" &&
+      req.method != "HEAD" &&
+      req.method != "PUT" &&
+      req.method != "POST" &&
+      req.method != "TRACE" &&
+      req.method != "OPTIONS" &&
+            req.method != "DELETE") {
+        /* Non-RFC2616 or CONNECT which is weird. */
+       return (pipe);
+    }
+    if (req.method != "GET" && req.method != "HEAD") {
+        /* We only deal with GET and HEAD by default */
+        return (pass);
+    } 
 
-   # if (req.method != "GET" &&
-   #   req.method != "HEAD" &&
-   #   req.method != "PUT" &&
-   #   req.method != "POST" &&
-   #   req.method != "TRACE" &&
-   #   req.method != "OPTIONS" &&
-   #         req.method != "DELETE") {
-   #     /* Non-RFC2616 or CONNECT which is weird. */
-   #    return (pipe);
-   # }
-   # if (req.method != "GET" && req.method != "HEAD") {
-   #     /* We only deal with GET and HEAD by default */
-   #     return (pass);
-   # } 
+   #if (req.http.Upgrade ~ "(?i)websocket") {
+   #     return (pipe);
+   #}
+	
     return (hash);    
 }
 
@@ -178,6 +153,12 @@ sub vcl_synth {
     "} );
 
     return (deliver);
+}
+
+sub vcl_pipe {
+     if (req.http.upgrade) {
+         set bereq.http.upgrade = req.http.upgrade;
+     }
 }
 
 #########################################################

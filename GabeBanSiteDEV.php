@@ -1,21 +1,19 @@
 <?php
 /*
  * Plugin Name: HotchDev_Template
- * Description: Purge's a site page when executed.
+ * Description: A plugin for employing purges and bans on the Varnish cache. 
  * Version: 0.0.1
  * Author: Gabriel Hotchner
  */
 
-//The plugin currently only performs URL page purges.
-//Only wokrs on Varnish 4.0
+//The plugin currently only works on Varnish 4.0
 
 /*Functionality to add:
  * Varnish 3.0 support
- * Support ban commands
+ * add ability for it to automatically purge when content is created or edited.
  * Add option to use admin port
  */
     
-//Need to add version 3 functionality
 class VarnishSiteBan {
    
     //Creates the plugin
@@ -39,7 +37,6 @@ class VarnishSiteBan {
         
         //Create the admin menu
         add_action('admin_menu', array(&$this, 'CreateMenu'));
-        //add_action( 'admin_init', array(&$this, 'CreateMenu'));
     } 
     
     //Creates the plugin menu
@@ -54,7 +51,6 @@ class VarnishSiteBan {
     
     //Purges a URL page
     function purge_varnish(){ 
-                    //alert("Let the Purge Commence!");
                     
                     //Set up the socket connection to varnish
                      $errno = (integer) "";
