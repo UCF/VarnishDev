@@ -140,6 +140,25 @@ class VarnishSiteBan {
                      //Close socket connection
                      fclose($varnish_sock);
     }
+    
+    function checkVarnish(){
+            
+            $connection_result = "";
+            //Set up the socket connection to varnish
+            $errno = (integer) "";
+            $errstr = (string) "";
+            $varnish_sock = fsockopen(get_option('address_option'), get_option('port_option'), $errno, $errstr, 10);
+            if($varnish_sock){
+                $connection_result .= "<p>Successfully connected to the Server.</p>";
+                fclose($varnish_sock);
+            } else {
+                $connection_result .= "<p>Unable to connect to the Server.</p>";
+            }
+            
+?>
+     <div class="updated"><?php echo $connection_result; ?></div>
+<?php
+    }
                 
     //Creates the style of the settings page
     function varnish_init_menu(){
@@ -164,6 +183,9 @@ class VarnishSiteBan {
             }
             if(isset($_POST['banPurge_button'])){
                 $this->banPurge_varnish();
+            }
+            if(isset($_POST['verify_connection'])){
+                $this->checkVarnish();
             }
          
             
@@ -198,8 +220,13 @@ class VarnishSiteBan {
 				<option value="4"<?php if(get_option("version_option") == 4) echo " selected"; ?>>V4: PURGE</option>
                 		<option value="3"<?php if(get_option("version_option") == 3) echo " selected"; ?>>V3: N/A</option>
                             </select>
-                        </td>  
-		</table>
+                        </td>
+                        </tr>
+                        
+                        <tr>
+                            <td> <input type="submit" class="button-secondary" name="verify_connection" value="<?php echo "Verify Varnish Connection"; ?>"> </td>
+                        </tr>
+                </table> 
                 
                 <p class="submit">
                     <input type="submit" class="button-primary" name="save_settings" value="<?php echo "Save Changes"; ?>"> 
