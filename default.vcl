@@ -55,20 +55,38 @@ sub vcl_recv {
                 return (purge);
         }
 
-     
+    #If given an uppercase "BAN" command we will ban specific objects
     if(req.method == "BAN"){
 	#Same ACL check as above:
 	if(!client.ip ~ purge) {
 		return(synth(403, "Not allowed."));
 	}
-	ban("req.http.host == " + req.http.host +
+	
+	#This is how a general ban works:
+        ban("req.http.host == " + req.http.host +
                 " && req.url == " + req.url);
 
         # Throw a synthetic page so the
         # request won't go to the backend.
         return(synth(200, "Ban added"));
-	
+	}
+
+    #If given a lowercase "ban" command we will ban the entire host's domain	
+    if(req.method == "ban"){
+        #Same ACL check as above:
+        if(!client.ip ~ purge) {
+                return(synth(403, "Not allowed."));
+        }
+
+        #This should ban the entire domain of a host:
+        ban("req.http.host ~ " + req.http.host);
+
+        # Throw a synthetic page so the
+        # request won't go to the backend.
+        return(synth(200, "Ban added"));
+
     }
+    
    
    
    if (req.method != "GET" &&

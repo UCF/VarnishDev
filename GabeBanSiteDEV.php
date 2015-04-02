@@ -52,6 +52,14 @@ class VarnishSiteBan {
     //Purges a URL page
     function purge_varnish(){ 
                     
+                    //$wpv_url
+        
+                    $wpv_wpurl = get_bloginfo('wpurl');
+                    $wpv_replace_wpurl = '/^http:\/\/([^\/]+)(.*)/i';
+		    $wpv_host = preg_replace($wpv_replace_wpurl, "$1", $wpv_wpurl);
+                    $wpv_blogaddr = preg_replace($wpv_replace_wpurl, "$2", $wpv_wpurl);
+		    $wpv_url = $wpv_blogaddr.$wpv_url;
+        
                     //Set up the socket connection to varnish
                      $errno = (integer) "";
                      $errstr = (string) "";
@@ -60,7 +68,7 @@ class VarnishSiteBan {
                     //Check if the settings provided connect to a varnish socket
                     if (!$varnish_sock) {
                         error_log("Varnish connect error: ". $errstr ."(". $errno .")");
-                    } else {
+                    } else {    
                      
                         //Take the user's URL
                        $txtUrl = get_option('page_option');
@@ -117,14 +125,17 @@ class VarnishSiteBan {
                        $url = substr($txtUrl, strpos($txtUrl, '/'), strlen($txtUrl));
                        
                        //Testing some Ban commands: 
-                       $cmd = "BAN ". $url ." HTTP/1.0\r\n";
+                       //Lowercase "ban" should ban entire host's domain
+                       //I will have to make a separate function for more specific bans
+                       $cmd = "ban ". $url ." HTTP/1.0\r\n";
                        $cmd .= "Host: ". $hostname ."\r\n";
                        $cmd .= "Connection: Close\r\n";
                        $cmd .= "\r\n";
-                       //$cmd = "ban req.url ~ ^$url && req.http.host == $hostname\n";
+                  
+                       //$cmd = "ban req.http.host ~ $hostname\n";
                        
                        // Send the request to the socket
-                       fwrite($varnish_sock, $cmd);
+                       fwrite($varnish_sock, $cmd."\n");
                     
                         // Get the reply (I may just remove this since I'm not using it)
                         $response = "";
