@@ -37,6 +37,15 @@ class VarnishSiteBan {
         
         //Create the admin menu
         add_action('admin_menu', array(&$this, 'CreateMenu'));
+        
+
+        //The following will purge a post whenever it is created,deleted or changed in anyway.
+        //Purge or Ban Posts:
+        add_action('edit_post', array(&$this,'purge_post'),20);
+        add_action('deleted_post', array(&$this, 'purge_post'), 20);
+        add_action('save_post ', array(&$this, 'purge_post'), 20);
+       
+
     } 
     
     //Creates the plugin menu
@@ -49,17 +58,60 @@ class VarnishSiteBan {
 			array(&$this,'varnish_init_menu'));
     }
     
+    
+    function purge_post($post){
+        $url = get_permalink($post);
+        $url = str_replace(get_bloginfo("wpurl"),"",$url);
+        $this->purge_specific($url);
+    }
+    
+    function purge_specific($wp_url){
+                    //Set up the socket connection to varnish
+                     $errno = (integer) "";
+                     $errstr = (string) "";
+                     $varnish_sock = fsockopen(get_option('address_option'), get_option('port_option'), $errno, $errstr, 10);
+                     
+                    //Check if the settings provided connect to a varnish socket
+                    if (!$varnish_sock) {
+                        error_log("Varnish connect error: ". $errstr ."(". $errno .")");
+                    } else {    
+                     
+                        //Take the user's URL
+                       $txtUrl = get_option('page_option');
+                       
+                       //We need the host name and page
+                       //So we perform a few operations to get those bits of information from the URL
+                       $txtUrl = str_replace("http://", "", $txtUrl); 
+                       $hostname = substr($txtUrl, 0, strpos($txtUrl, '/'));
+                       $url = $wp_url;
+                       $url = substr($wp_url, strpos($wp_url, '/'), strlen($wp_url));
+                        
+                        // Build the request (Purge)
+                        $cmd = "PURGE ". $url ." HTTP/1.0\r\n";
+                        $cmd .= "Host: ". $hostname ."\r\n";
+                        $cmd .= "Connection: Close\r\n";
+                        $cmd .= "\r\n";
+
+                      
+                      
+                        // Send the request to the socket
+                         fwrite($varnish_sock, $cmd);
+                    
+                        // Get the reply (I may just remove this since I'm not using it)
+                        $response = "";
+                        while (!feof($varnish_sock)) {
+                            $response .= fgets($varnish_sock, 128);
+                        }
+                      }
+                     
+                     //Close socket connection
+                     fclose($varnish_sock);    
+    }
+    
+    
     //Purges a URL page
     function purge_varnish(){ 
                     
-                    //$wpv_url
-        
-                    $wpv_wpurl = get_bloginfo('wpurl');
-                    $wpv_replace_wpurl = '/^http:\/\/([^\/]+)(.*)/i';
-		    $wpv_host = preg_replace($wpv_replace_wpurl, "$1", $wpv_wpurl);
-                    $wpv_blogaddr = preg_replace($wpv_replace_wpurl, "$2", $wpv_wpurl);
-		    $wpv_url = $wpv_blogaddr.$wpv_url;
-        
                     //Set up the socket connection to varnish
                      $errno = (integer) "";
                      $errstr = (string) "";
@@ -133,6 +185,7 @@ class VarnishSiteBan {
                        $cmd .= "\r\n";
                   
                        //$cmd = "ban req.http.host ~ $hostname\n";
+                       
                        
                        // Send the request to the socket
                        fwrite($varnish_sock, $cmd."\n");
