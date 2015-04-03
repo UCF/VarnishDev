@@ -6,11 +6,9 @@
  * Author: Gabriel Hotchner
  */
 
-//The plugin currently only works on Varnish 4.0
-
 /*Functionality to add:
  * Varnish 3.0 support
- * add ability for it to automatically purge when content is created or edited.
+ * finish adding auto purge/ban functions
  * Add option to use admin port
  */
     
@@ -37,14 +35,14 @@ class VarnishSiteBan {
         
         //Create the admin menu
         add_action('admin_menu', array(&$this, 'CreateMenu'));
-        
-
-        //The following will purge a post whenever it is created,deleted or changed in anyway.
+  
         //Purge or Ban Posts:
-        add_action('edit_post', array(&$this,'purge_post'),20);
-        add_action('deleted_post', array(&$this, 'purge_post'), 20);
-        add_action('save_post ', array(&$this, 'purge_post'), 20);
+        add_action('edit_post', array(&$this,'purge_post'),25);
+        add_action('deleted_post', array(&$this, 'purge_post'), 25);
+        add_action('save_post ', array(&$this, 'purge_post'), 25);
        
+        //List of Auto Purge/Ban functions to possibly add:
+        // Comments, links, pages, themes, sidebars, styles, categories, attachments, misc_actions, post status, (publish_post), feed actions(?)
 
     } 
     
@@ -58,14 +56,16 @@ class VarnishSiteBan {
 			array(&$this,'varnish_init_menu'));
     }
     
-    
+    //Purges the specified post.
     function purge_post($post){
         $url = get_permalink($post);
         $url = str_replace(get_bloginfo("wpurl"),"",$url);
         $this->purge_specific($url);
     }
     
+    //Purges based on a specific url which requires auto-purging. 
     function purge_specific($wp_url){
+                    
                     //Set up the socket connection to varnish
                      $errno = (integer) "";
                      $errstr = (string) "";
@@ -91,9 +91,7 @@ class VarnishSiteBan {
                         $cmd .= "Host: ". $hostname ."\r\n";
                         $cmd .= "Connection: Close\r\n";
                         $cmd .= "\r\n";
-
-                      
-                      
+  
                         // Send the request to the socket
                          fwrite($varnish_sock, $cmd);
                     
@@ -153,8 +151,7 @@ class VarnishSiteBan {
                      fclose($varnish_sock);    
                 }
                 
-    //This function will eventually purge a whole blog, 
-    //right now I'm working on getting the bans working properly
+    //This function purges host's entire domain.
     function banPurge_varnish(){
         
                     //Set up the socket connection to varnish
@@ -176,16 +173,11 @@ class VarnishSiteBan {
                        $hostname = substr($txtUrl, 0, strpos($txtUrl, '/'));
                        $url = substr($txtUrl, strpos($txtUrl, '/'), strlen($txtUrl));
                        
-                       //Testing some Ban commands: 
                        //Lowercase "ban" should ban entire host's domain
-                       //I will have to make a separate function for more specific bans
                        $cmd = "ban ". $url ." HTTP/1.0\r\n";
                        $cmd .= "Host: ". $hostname ."\r\n";
                        $cmd .= "Connection: Close\r\n";
-                       $cmd .= "\r\n";
-                  
-                       //$cmd = "ban req.http.host ~ $hostname\n";
-                       
+                       $cmd .= "\r\n";                       
                        
                        // Send the request to the socket
                        fwrite($varnish_sock, $cmd."\n");
@@ -201,13 +193,17 @@ class VarnishSiteBan {
                      fclose($varnish_sock);
     }
     
+    //Assits the user in verifying their connection to the Varnish Server
     function checkVarnish(){
             
             $connection_result = "";
+          
             //Set up the socket connection to varnish
             $errno = (integer) "";
             $errstr = (string) "";
             $varnish_sock = fsockopen(get_option('address_option'), get_option('port_option'), $errno, $errstr, 10);
+            
+            //Send back message based off of failed/successful connection
             if($varnish_sock){
                 $connection_result .= "<p>Successfully connected to the Server.</p>";
                 fclose($varnish_sock);
@@ -291,7 +287,7 @@ class VarnishSiteBan {
                 <p class="submit">
                     <input type="submit" class="button-primary" name="save_settings" value="<?php echo "Save Changes"; ?>"> 
                     <input type="submit" class="button-secondary" name="purge_button" value="<?php echo "Purge URL"; ?>">
-                    <input type="submit" class="button-secondary" name="banPurge_button" value="<?php echo "Purge/Ban whole Blog"; ?>">
+                    <input type="submit" class="button-secondary" name="banPurge_button" value="<?php echo "Ban whole Blog"; ?>">
                 
                 </p>
                 
