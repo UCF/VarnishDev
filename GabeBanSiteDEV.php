@@ -193,7 +193,7 @@ class VarnishSiteBan {
                      fclose($varnish_sock);
     }
     
-    //Assits the user in verifying their connection to the Varnish Server
+    //Assits the user in verifying their connection to the Varnish Serve
     function checkVarnish(){
             
             $connection_result = "";
@@ -221,18 +221,51 @@ class VarnishSiteBan {
         if(current_user_can('administrator')) {
             if($_SERVER["REQUEST_METHOD"] == "POST") {
                 if(isset($_POST['save_settings'])) {
-                    if(isset($_POST["address_option"]))
-			update_option("address_option", trim(strip_tags($_POST["address_option"])));
-                    if(isset($_POST["port_option"]))
-			update_option("port_option", (int)trim(strip_tags($_POST["port_option"])));
-                    if(isset($_POST["page_option"]))
-			update_option("page_option", trim(strip_tags($_POST["page_option"])));
+                    $error_flag = 0;
+                    if(isset($_POST["address_option"])){
+			if(filter_var($_POST["address_option"], FILTER_VALIDATE_IP)==false){
+?>
+                            <div class="updated"><p><font color="red"><?php echo "Invalid IP Address."; ?></font></p></div>
+<?php
+                            $error_flag++;
+                        } else{
+                            update_option("address_option", trim(strip_tags($_POST["address_option"])));
+
+                        }
+                    }
+                    if(isset($_POST["port_option"])){
+                        if($_POST["port_option"] > 65535 || $_POST["port_option"] <= 0 ){                            
+?>
+                            <div class="updated"><p><font color="red"><?php echo "Invalid Port Number."; ?></font></p></div>
+<?php
+                            $error_flag++;
+
+                        } else{
+                            update_option("port_option", (int)trim(strip_tags($_POST["port_option"])));
+                        }
+                    }
+                    if(isset($_POST["page_option"])){
+                        if(filter_var($_POST["page_option"], FILTER_VALIDATE_URL)==false){
+?>
+                            <div class="updated"><p><font color="red"><?php echo "Invalid URL."; ?></font></p></div>
+<?php
+                            $error_flag++;
+
+                        } else{
+                            update_option("page_option", trim(strip_tags($_POST["page_option"])));
+                        }
+                    }
                     if(isset($_POST["version_option"]))
 			update_option("version_option", $_POST["version_option"]);
-                    
+                    if($error_flag>0){
 ?>
-        <div class="updated"><p><?php echo "Settings Saved!"; ?></p></div>
+                        <div class="updated"><p><font color="red"><?php echo "Invalid Settings were not saved."; ?></font></p></div>
 <?php
+                    } else{
+?>
+                        <div class="updated"><p><?php echo "Settings Saved!"; ?></p></div>
+<?php
+                    }
             }
             if(isset($_POST['purge_button'])){
                 $this->purge_varnish();
