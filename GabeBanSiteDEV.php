@@ -32,11 +32,19 @@ class VarnishSiteBan {
   
         //Purge or Ban Posts:
         add_action('wp_trash_post', array(&$this, 'purge_post'), 25);
-        add_action('deleted_post', array(&$this, 'purge_post'), 25);
+        add_action('delete_post', array(&$this, 'purge_post'), 25);
         add_action('publish_post', array(&$this, 'purge_post'), 25);
         //add_action('save_post ', array(&$this, 'purge_post'), 25);
         //add_action('edit_post', array(&$this,'purge_post'),25);
        
+        //Purge or Ban Comments:
+        add_action('wp_insert_comment', array(&$this, 'purge_comment'), 25);
+        add_action('edit_comment', array(&$this, 'purge_comment'), 25);
+        add_action('trashed_comment', array(&$this, 'purge_comment'), 25);
+        add_action('delete_comment', array(&$this, 'purge_comment'), 25);
+        add_action('untrashed_comment', array(&$this, 'purge_comment'), 25);
+        //add_action('comment_post', array(&$this, 'purge_comment'), 25);
+        
         //List of Auto Purge/Ban functions to possibly add:
         // Comments, links, pages, themes, sidebars, styles, categories, attachments, misc_actions, post status, (publish_post), feed actions(?)
 
@@ -57,6 +65,14 @@ class VarnishSiteBan {
         $url = get_permalink($post);
         $url = str_replace(get_bloginfo("wpurl"),"",$url);
         $this->purge_specific($url);
+    }
+    
+    //Purges the specified comment
+    function purge_comment($comment){
+        $comment_url = get_comment($comment);
+        if($comment_url->comment_approved == 1 || $comment_url->comment_approved == 'trash'){
+            $this->purge_specific($comment_url->comment_post_ID);
+        }
     }
     
     //Purges based on a specific url which requires auto-purging. 
