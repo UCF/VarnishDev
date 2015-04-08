@@ -5,12 +5,6 @@
  * Version: 0.0.1
  * Author: Gabriel Hotchner
  */
-
-/*Functionality to add:
- * Varnish 3.0 support
- * finish adding auto purge/ban functions
- * Add option to use admin port
- */
     
 class VarnishSiteBan {
    
@@ -37,9 +31,11 @@ class VarnishSiteBan {
         add_action('admin_menu', array(&$this, 'CreateMenu'));
   
         //Purge or Ban Posts:
-        add_action('edit_post', array(&$this,'purge_post'),25);
+        add_action('wp_trash_post', array(&$this, 'purge_post'), 25);
         add_action('deleted_post', array(&$this, 'purge_post'), 25);
-        add_action('save_post ', array(&$this, 'purge_post'), 25);
+        add_action('publish_post', array(&$this, 'purge_post'), 25);
+        //add_action('save_post ', array(&$this, 'purge_post'), 25);
+        //add_action('edit_post', array(&$this,'purge_post'),25);
        
         //List of Auto Purge/Ban functions to possibly add:
         // Comments, links, pages, themes, sidebars, styles, categories, attachments, misc_actions, post status, (publish_post), feed actions(?)
@@ -234,9 +230,9 @@ class VarnishSiteBan {
                         }
                     }
                     if(isset($_POST["port_option"])){
-                        if($_POST["port_option"] > 65535 || $_POST["port_option"] <= 0 ){                            
+                        if($_POST["port_option"] > 65535 || $_POST["port_option"] <= 0 || filter_var($_POST["port_option"], FILTER_VALIDATE_INT) === false){                            
 ?>
-                            <div class="updated"><p><font color="red"><?php echo "Invalid Port Number."; ?></font></p></div>
+                            <div class="updated"><p><font color="red"><?php echo "Invalid Port Number. "; ?></font></p></div>
 <?php
                             $error_flag++;
 
@@ -303,7 +299,7 @@ class VarnishSiteBan {
 			</tr>
                         
                         <tr valign="top">
-                        <th scope="row">Varnish Version</th>
+                        <th scope="row">Varnish Version</th> 
                         <td>
                             <select id="varnishVersion" name="version_option">
 				<option value="4"<?php if(get_option("version_option") == 4) echo " selected"; ?>>V4: PURGE</option>
