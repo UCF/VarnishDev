@@ -45,11 +45,20 @@ class VarnishSiteBan {
         add_action('untrashed_comment', array(&$this, 'purge_comment'), 25);
         //add_action('comment_post', array(&$this, 'purge_comment'), 25);
         
+       //Purge or Ban Links: (don't know if these work)
+       add_action('add_link', array(&$this, 'purge_link'), 25);
+       add_action('delete_link', array(&$this, 'purge_link'), 25);
+       add_action('edit_link', array(&$this, 'purge_link'), 25);
+
+       //Purge or Ban pages:
+       add_action('publish_page', array(&$this, 'purge_post'), 25);
+
+       
         //List of Auto Purge/Ban functions to possibly add:
-        // Comments, links, pages, themes, sidebars, styles, categories, attachments, misc_actions, post status, (publish_post), feed actions(?)
+        // links, pages, themes, sidebars, styles, categories, attachments, misc_actions, post status, feed actions(?)
 
     } 
-    
+      
     //Creates the plugin menu
     function CreateMenu() {
                 add_options_page(
@@ -64,6 +73,13 @@ class VarnishSiteBan {
     function purge_post($post){
         $url = get_permalink($post);
         $url = str_replace(get_bloginfo("wpurl"),"",$url);
+        $this->purge_specific($url);
+    }
+    
+    
+    function purge_link($link){
+        $url = get_bookmark($link);
+        $url = $url->link_url;
         $this->purge_specific($url);
     }
     
