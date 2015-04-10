@@ -51,11 +51,13 @@ class VarnishSiteBan {
        add_action('edit_link', array(&$this, 'purge_link'), 25);
 
        //Purge or Ban pages:
-       add_action('publish_page', array(&$this, 'purge_post'), 25);
-
+       add_action('upload_files_type', array(&$this, 'purge_post'), 25);
        
+       //Purge or Ban uploads & attachments (don't know if this works):
+       add_action('publish_page', array(&$this, 'purge_media'), 25);
+
         //List of Auto Purge/Ban functions to possibly add:
-        // links, pages, themes, sidebars, styles, categories, attachments, misc_actions, post status, feed actions(?)
+        //Themes, sidebars, styles, categories, misc_actions, post status, feed actions(?)
 
     } 
       
@@ -69,14 +71,20 @@ class VarnishSiteBan {
 			array(&$this,'varnish_init_menu'));
     }
     
-    //Purges the specified post.
+    //Purges the specified post or page. 
     function purge_post($post){
         $url = get_permalink($post);
         $url = str_replace(get_bloginfo("wpurl"),"",$url);
         $this->purge_specific($url);
     }
     
+     //Purges media (testing)
+    function purge_media($media){
+        $url = get_attachment_url($link);
+        $this->purge_specific($url);
+    }
     
+    //Purges links
     function purge_link($link){
         $url = get_bookmark($link);
         $url = $url->link_url;
