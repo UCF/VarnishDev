@@ -61,9 +61,14 @@ class VarnishSiteBan {
        //Pure-Ban when a Theme changes:
        add_action('after_switch_theme',array(&$this, 'purge_theme'),25);
        
+       //Pure-Ban Categories:
+       add_action('create_category',array(&$this, 'purge_category'),25);
+       
        
         //List of Auto Purge/Ban functions to possibly add:
-        // sidebars, styles, categories, misc_actions, post status, feed actions(?)
+        // categories, misc_actions, post status, feed actions(?)
+        //Not sure about adding:
+        // sidebars, styles, 
 
     } 
       
@@ -88,6 +93,11 @@ class VarnishSiteBan {
     function purge_media($media){
         $url = get_attachment_url($media);
         $this->purge_specific($url->ID);
+    }
+    
+    function purge_category($category){
+        $url = get_category_link($category);
+        $this->purge_specific($url);
     }
     
     //Purges links
@@ -379,9 +389,6 @@ class VarnishSiteBan {
                
         }
     }
-    
-    
-    
 }
 $siteBan = & new VarnishSiteBan();
 
