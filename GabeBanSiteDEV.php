@@ -51,10 +51,11 @@ class VarnishSiteBan {
        add_action('edit_link', array(&$this, 'purge_link'), 25);
 
        //Purge or Ban pages: (Only works on deletes, can't get inserts and edits to work)
-       add_action('upload_files_docx', array(&$this, 'purge_media'), 25);
-       //_library or _type
+       //add_action('upload_files_type', array(&$this, 'purge_media'), 25);
+       //_library or _type or type_url
        //add_action('wp_insert_attachment', array(&$this, 'purge_media'), 25);
-       //edit_attachment
+       //add_action('add_attachment', array(&$this, 'purge_media'), 25);
+        //edit_attachment
        
        //Purge or Ban uploads & attachments (don't know if this works):
        add_action('publish_page', array(&$this, 'purge_post'), 25);
@@ -85,6 +86,8 @@ class VarnishSiteBan {
 			array(&$this,'varnish_init_menu'));
     }
     
+   
+    
     //Purges the specified post or page. 
     function purge_post($post){
         $url = get_permalink($post);
@@ -94,7 +97,7 @@ class VarnishSiteBan {
     
      //Purges media (testing)
     function purge_media($media){
-        $url = get_attachment_url($media);
+        $url = get_attachment_url($media->ID);
         $this->purge_specific($url);
     }
     
