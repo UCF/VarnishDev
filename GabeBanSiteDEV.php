@@ -50,14 +50,11 @@ class VarnishSiteBan {
        add_action('delete_link', array(&$this, 'purge_link'), 25);
        add_action('edit_link', array(&$this, 'purge_link'), 25);
 
-       //Purge or Ban pages: (Only works on deletes, can't get inserts and edits to work)
-       //add_action('upload_files_type', array(&$this, 'purge_media'), 25);
-       //_library or _type or type_url
-       //add_action('wp_insert_attachment', array(&$this, 'purge_media'), 25);
-       //add_action('add_attachment', array(&$this, 'purge_media'), 25);
-        //edit_attachment
+       //Purge or Ban pages: 
+       add_action('add_attachment', array(&$this, 'purge_media'), 25);
+       add_action('edit_attachment', array(&$this, 'purge_media'), 25);
        
-       //Purge or Ban uploads & attachments (don't know if this works):
+       //Purge or Ban uploads & attachments:
        add_action('publish_page', array(&$this, 'purge_post'), 25);
 
        //Pure-Ban when a Theme changes:
@@ -70,7 +67,7 @@ class VarnishSiteBan {
 
        
         //List of Auto Purge/Ban functions to possibly add:
-       
+        //
         //Not sure about adding:
         // sidebars, styles, feed actions(?)
 
@@ -97,7 +94,8 @@ class VarnishSiteBan {
     
      //Purges media (testing)
     function purge_media($media){
-        $url = get_attachment_url($media->ID);
+        $url = get_attachment_link($media);
+        $url = str_replace(get_bloginfo("wpurl"),"",$url);
         $this->purge_specific($url);
     }
     
