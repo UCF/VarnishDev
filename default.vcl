@@ -127,6 +127,11 @@ sub vcl_hash {
     } else {
         hash_data(server.ip);
     }
+
+    if (req.http.X-Forwarded-Proto) {
+       hash_data(req.http.X-Forwarded-Proto);
+    }
+
     return (lookup);
 }
 
