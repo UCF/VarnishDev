@@ -34,8 +34,6 @@ class VarnishSiteBan {
         add_action('wp_trash_post', array(&$this, 'purge_post'), 25);
         add_action('delete_post', array(&$this, 'purge_post'), 25);
         add_action('publish_post', array(&$this, 'purge_post'), 25);
-        //add_action('save_post ', array(&$this, 'purge_post'), 25);
-        //add_action('edit_post', array(&$this,'purge_post'),25);
        
         //Purge or Ban Comments:
         add_action('wp_insert_comment', array(&$this, 'purge_comment'), 25);
@@ -43,13 +41,13 @@ class VarnishSiteBan {
         add_action('trashed_comment', array(&$this, 'purge_comment'), 25);
         add_action('delete_comment', array(&$this, 'purge_comment'), 25);
         add_action('untrashed_comment', array(&$this, 'purge_comment'), 25);
-        //add_action('comment_post', array(&$this, 'purge_comment'), 25);
         
-       //Purge or Ban Links: (don't know if these work)
+       /* //Purge or Ban Links: (don't know if these work)
        add_action('add_link', array(&$this, 'purge_link'), 25);
        add_action('delete_link', array(&$this, 'purge_link'), 25);
        add_action('edit_link', array(&$this, 'purge_link'), 25);
-
+        */
+        
        //Purge or Ban pages: 
        add_action('add_attachment', array(&$this, 'purge_media'), 25);
        add_action('edit_attachment', array(&$this, 'purge_media'), 25);
@@ -57,20 +55,22 @@ class VarnishSiteBan {
        //Purge or Ban uploads & attachments:
        add_action('publish_page', array(&$this, 'purge_post'), 25);
 
-       //Pure-Ban when a Theme changes:
+       //Purge-Ban when a Theme changes:
        add_action('after_switch_theme',array(&$this, 'purge_theme'),25);
        
-       //Pure-Ban Categories:
+       //Purge-Ban Categories:
        add_action('create_category',array(&$this, 'purge_category'),25);
        add_action('delete_category',array(&$this, 'purge_category'),25);
        add_action('edit_category',array(&$this, 'purge_category'),25);
 
+       //Purge/Ban Widgets: (testing)
+       //add_action('wp_register_sidebar_widget',array(&$this,'purge_widget'),25);
        
+       //Purge/Ban sidebar: (testing)
+       //add_action('sidebar_admin_page',array(&$this,'purge_sidebar'),25);
+     
         //List of Auto Purge/Ban functions to possibly add:
-        //
-        //Not sure about adding:
-        // sidebars, styles, feed actions(?)
-
+        //modify to include Varnish 3 support
     } 
       
     //Creates the plugin menu
@@ -92,24 +92,30 @@ class VarnishSiteBan {
         $this->purge_specific($url);
     }
     
-     //Purges media (testing)
+    /*function purge_sidebar($sidebar){
+        $url=get_bloginfo('wpurl');
+        $this->purge_specific($url); 
+    }*/
+    
+     //Purges media
     function purge_media($media){
         $url = get_attachment_link($media);
         $url = str_replace(get_bloginfo("wpurl"),"",$url);
         $this->purge_specific($url);
     }
     
+    //Purges categories
     function purge_category($category){
         $url = get_category_link($category);
         $this->purge_specific($url);
     }
     
-    //Purges links
+   /* //Purges links
     function purge_link($link){
         $url = get_bookmark($link);
         $url = $url->link_url;
         $this->purge_specific($url);
-    }
+    }*/
     
     //Purges the specified comment
     function purge_comment($comment){
@@ -119,6 +125,7 @@ class VarnishSiteBan {
         }
     }
     
+    //Purges theme changes
     function purge_theme(){
         $url=get_bloginfo('template_url');
         $this->purge_specific($url); 
