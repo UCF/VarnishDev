@@ -9,6 +9,11 @@ backend default {
     .port = "8080";
 }
 
+#backend default_ssl{
+#	.host = "127.0.0.1";
+#	.port = "443";
+#}
+
 sub vcl_backend_response {
   
   if (beresp.status >= 500 && beresp.status < 600) {
@@ -32,6 +37,9 @@ sub vcl_deliver {
         } else {
                 set resp.http.X-Cache = "MISS";
         }
+
+	unset resp.http.Via;
+	unset resp.http.X-Varnish;
 	  
  	 #Ban code:
 	unset resp.http.x-url; # Optional
@@ -70,6 +78,12 @@ sub vcl_recv {
         # request won't go to the backend.
         return(synth(200, "Ban added"));
 	}
+
+	#Set backend depending on port being used?
+	#if(std.port(server.ip)==443){
+	#	set req.backend_hin = default_ssl;
+	#}
+
 
     #If given a lowercase "ban" command we will ban the entire host's domain	
     if(req.method == "ban"){
@@ -132,7 +146,7 @@ sub vcl_hash {
        hash_data(req.http.X-Forwarded-Proto);
     }
 
-    return (lookup);
+    return (hash);
 }
 
 sub vcl_synth {
