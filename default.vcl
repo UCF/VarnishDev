@@ -1,7 +1,9 @@
 vcl 4.0;
 
+
 import std;        
 import directors;  
+
 
 # Default backend definition. Set this to point to your content server.
 backend default {
@@ -9,13 +11,59 @@ backend default {
     .port = "8080";
 }
 
-#backend default_ssl{
-#	.host = "127.0.0.1";
-#	.port = "443";
-#}
-
 sub vcl_backend_response {
   
+  // If it's a POST, hit_for_pass.
+    if (bereq.method == "POST")
+    {
+        set beresp.uncacheable = true;
+        set beresp.ttl = 120s;
+        return (deliver);
+    }
+
+    // If backend says don't cache, don't cache, man. Respect.
+    if ( beresp.http.Cache-Control ~ "private")
+    {
+        set beresp.uncacheable = true;
+        set beresp.ttl = 120s;
+        return (deliver);
+    }
+
+    // If it's an /administrator url, don't cache it.
+    if ( bereq.url ~ "^/administrator" )
+    {
+        set beresp.uncacheable = true;
+        set beresp.ttl = 120s;
+        return (deliver);
+    }
+
+    // Don't cache the login page, 'cause we always want to send the (new) proper session cookie when a user wants to login.
+    // A user must have a valid session cookie before authenticating, so when they receive the login page, they should also 
+    // receive the set-cookie directive with their (valid) session id.
+    if ( bereq.url ~ "^/login" )
+    {
+        set beresp.uncacheable = true;
+        set beresp.ttl = 120s;
+        return (deliver);
+    }
+
+    // only cache responses that are HTTP 200 or 404s
+    // Pass on caching objects whose response is not 200 and not 404.
+    if ( beresp.status != 200 && beresp.status != 404 )
+    {
+        set beresp.uncacheable = true;
+        set beresp.ttl = 120s;
+        return (deliver);
+    }
+
+// Allow items to be stale if required.
+    set beresp.grace = 1h;
+
+
+ // unset the etag header.
+    unset beresp.http.etag;
+  
+
   if (beresp.status >= 500 && beresp.status < 600) {
         unset beresp.http.Cache-Control;
         set beresp.http.Cache-Control = "no-cache, max-age=0, must-revalidate";
@@ -25,9 +73,20 @@ sub vcl_backend_response {
         return(deliver);
     }
  
+ // cache content for 1 hour. Feel free to change this number for however long you wish Varnish to cache content for.
+    // Logged in users only get cached for 2 minutes.
+    if (bereq.http.cookie ~ "loggedin" )
+    {
+        set beresp.ttl = 2m;
+    } else {
+        set beresp.ttl = 60m;
+    }
+
  #ban code:
   set beresp.http.x-url = bereq.url;
 
+// Deliver us from cache.    
+return (deliver);
 }
 
 sub vcl_deliver {
@@ -37,12 +96,10 @@ sub vcl_deliver {
         } else {
                 set resp.http.X-Cache = "MISS";
         }
-
-	unset resp.http.Via;
-	unset resp.http.X-Varnish;
 	  
  	 #Ban code:
 	unset resp.http.x-url; # Optional
+
 }
 
 #########################################################
@@ -55,6 +112,22 @@ acl purge {
 }
 
 sub vcl_recv {
+
+
+
+    
+
+    // set and/or append X-Forwarded-For header.
+    if (req.restarts == 0) {
+        if (req.http.X-Forwarded-For) {
+            set req.http.X-Forwarded-For =
+            req.http.X-Forwarded-For + ", " + client.ip;
+        } else {
+            set req.http.X-Forwarded-For = client.ip;
+        }
+    }
+
+
     # allow PURGE from localhost and ....
     if (req.method == "PURGE") {
                 if (!client.ip ~ purge) {
@@ -78,12 +151,6 @@ sub vcl_recv {
         # request won't go to the backend.
         return(synth(200, "Ban added"));
 	}
-
-	#Set backend depending on port being used?
-	#if(std.port(server.ip)==443){
-	#	set req.backend_hin = default_ssl;
-	#}
-
 
     #If given a lowercase "ban" command we will ban the entire host's domain	
     if(req.method == "ban"){
@@ -118,6 +185,20 @@ sub vcl_recv {
         return (pass);
     } 
 
+     // If it's a POST request, or part of component/banners, pass to backend.
+    if(req.url ~ "^/component/banners" || req.method == "POST")
+    {
+        return (pass);
+    }
+
+    // If your login page is not at "/login", change the below line. This statement is primarily so a user will get a unique
+    // session cookie if they visit the administrator section, or the login section. You can't log into Joomla without having 
+    // a valid session cookie to begin with.
+    if (req.url ~ "^/login" || req.url ~ "^/administrator")
+    {
+        return (pass);
+    }
+
    #if (req.http.Upgrade ~ "(?i)websocket") {
    #     return (pipe);
    #}
@@ -134,18 +215,23 @@ sub vcl_purge {
   }
 }
 
-sub vcl_hash {
+sub vcl_hash { 
     hash_data(req.url);
     if (req.http.host) {
         hash_data(req.http.host);
     } else {
         hash_data(server.ip);
     }
-
-    if (req.http.X-Forwarded-Proto) {
-       hash_data(req.http.X-Forwarded-Proto);
+    
+    #SSL HASHING
+     // If it's not a static resource, include X-Forwarded-Proto in the hash (if it exists).
+    // This makes dynamic content unique for ssl vs non-ssl
+    if (!(req.url ~ "^[^?]*\.(bmp|bz2|css|doc|eot|flv|gif|gz|ico|jpeg|jpg|js|less|mp[34]|pdf|png|rar|rtf|swf|tar|tgz|txt|wav|woff|xml|zip)(\?.*)?$"))
+    {
+    	if (req.http.X-Forwarded-Proto ~ "https") {
+		hash_data(req.http.X-Forwarded-Proto);
+    	}
     }
-
     return (lookup);
 }
 
