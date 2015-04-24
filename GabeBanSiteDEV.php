@@ -231,7 +231,9 @@ class VarnishSiteBan {
                     //Check if the settings provided connect to a varnish socket
                     if (!$varnish_sock) {
                         error_log("Varnish connect error: ". $errstr ."(". $errno .")");
-                    } else {
+                    } 
+                    
+                    else if (get_option('version_option')=="4.0"){
                      
                         //Take the user's URL
                        $txtUrl = get_option('page_option');
@@ -257,6 +259,29 @@ class VarnishSiteBan {
                             $response .= fgets($varnish_sock, 128);
                         }
                       }
+                    else if (get_option('version_option')=="3.0"){
+                          //Take the user's URL
+                       $txtUrl = get_option('page_option');
+                       
+                       //We need the host name and page
+                       //So we perform a few operations to get those bits of information from the URL
+                       $txtUrl = str_replace("http://", "", $txtUrl); 
+                       $hostname = substr($txtUrl, 0, strpos($txtUrl, '/'));
+                       
+                       
+                       //Lowercase "ban" should ban entire host's domain
+                       $cmd = "req.http.host ~ $hostname \n" ;
+                       
+                       
+                       // Send the request to the socket
+                       fwrite($varnish_sock, $cmd."\n");
+                    
+                        // Get the reply (I may just remove this since I'm not using it)
+                        $response = "";
+                        while (!feof($varnish_sock)) {
+                            $response .= fgets($varnish_sock, 128);
+                        }
+                    }
                      
                      //Close socket connection
                      fclose($varnish_sock);
@@ -375,8 +400,8 @@ class VarnishSiteBan {
                         <th scope="row">Varnish Version</th> 
                         <td>
                             <select id="varnishVersion" name="version_option">
-				<option value="4"<?php if(get_option("version_option") == 4) echo " selected"; ?>>V4: PURGE</option>
-                		<option value="3"<?php if(get_option("version_option") == 3) echo " selected"; ?>>V3: N/A</option>
+				<option value="4"<?php if(get_option("version_option") == 4) echo " selected"; ?>>4.0</option>
+                		<option value="3"<?php if(get_option("version_option") == 3) echo " selected"; ?>>3.0</option>
                             </select>
                         </td>
                         </tr>
