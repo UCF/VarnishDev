@@ -16,6 +16,7 @@ class VarnishSiteBan {
         $port_option = "80";
         $page_option = "https://www.mysite.com/some/page";
         $version_option = 4;
+        $port_type_option = 1;
         
         //Add the settings
         if(!get_option("address_option"))
@@ -26,6 +27,8 @@ class VarnishSiteBan {
             add_option("page_option", $page_option, '', 'yes');
         if(!get_option("version_option"))
             add_option("version_option", $version_option, '', 'yes');
+        if(!get_option("port_type_option"))
+            add_option("port_type_option", $port_type_option, '', 'yes');
         
         //Create the admin menu
         add_action('admin_menu', array(&$this, 'CreateMenu'));
@@ -42,11 +45,6 @@ class VarnishSiteBan {
         add_action('delete_comment', array(&$this, 'purge_comment'), 25);
         add_action('untrashed_comment', array(&$this, 'purge_comment'), 25);
         
-       /* //Purge or Ban Links: (don't know if these work)
-       add_action('add_link', array(&$this, 'purge_link'), 25);
-       add_action('delete_link', array(&$this, 'purge_link'), 25);
-       add_action('edit_link', array(&$this, 'purge_link'), 25);
-        */
         
        //Purge or Ban pages: 
        add_action('add_attachment', array(&$this, 'purge_media'), 25);
@@ -62,15 +60,7 @@ class VarnishSiteBan {
        add_action('create_category',array(&$this, 'purge_category'),25);
        add_action('delete_category',array(&$this, 'purge_category'),25);
        add_action('edit_category',array(&$this, 'purge_category'),25);
-
-       //Purge/Ban Widgets: (testing)
-       //add_action('wp_register_sidebar_widget',array(&$this,'purge_widget'),25);
-       
-       //Purge/Ban sidebar: (testing)
-       //add_action('sidebar_admin_page',array(&$this,'purge_sidebar'),25);
-     
-        //List of Auto Purge/Ban functions to possibly add:
-        //modify to include Varnish 3 support
+    
     } 
       
     //Creates the plugin menu
@@ -92,11 +82,6 @@ class VarnishSiteBan {
         $this->purge_specific($url);
     }
     
-    /*function purge_sidebar($sidebar){
-        $url=get_bloginfo('wpurl');
-        $this->purge_specific($url); 
-    }*/
-    
      //Purges media
     function purge_media($media){
         $url = get_attachment_link($media);
@@ -110,12 +95,6 @@ class VarnishSiteBan {
         $this->purge_specific($url);
     }
     
-   /* //Purges links
-    function purge_link($link){
-        $url = get_bookmark($link);
-        $url = $url->link_url;
-        $this->purge_specific($url);
-    }*/
     
     //Purges the specified comment
     function purge_comment($comment){
@@ -259,6 +238,8 @@ class VarnishSiteBan {
                             $response .= fgets($varnish_sock, 128);
                         }
                       }
+                    //This is being used to test the Varnish 3 ban command.
+                    //Un-comment this section to test it:
                     else if (get_option('version_option')=="3.0"){
                           //Take the user's URL
                        $txtUrl = get_option('page_option');
@@ -351,6 +332,8 @@ class VarnishSiteBan {
                     }
                     if(isset($_POST["version_option"]))
 			update_option("version_option", $_POST["version_option"]);
+                    if(isset($_POST["port_type_option"]))
+			update_option("port_type_option", $_POST["port_type_option"]);
                     if($error_flag>0){
 ?>
                         <div class="updated"><p><font color="red"><?php echo "Invalid Settings were not saved."; ?></font></p></div>
@@ -402,6 +385,16 @@ class VarnishSiteBan {
                             <select id="varnishVersion" name="version_option">
 				<option value="4"<?php if(get_option("version_option") == 4) echo " selected"; ?>>4.0</option>
                 		<option value="3"<?php if(get_option("version_option") == 3) echo " selected"; ?>>3.0</option>
+                            </select>
+                        </td>
+                        </tr>
+                        
+                        <tr valign="top">
+                        <th scope="row">Port Type</th> 
+                        <td>
+                            <select id="portType" name="port_type_option">
+				<option value="4"<?php if(get_option("port_type_option") == 1) echo " selected"; ?>>Admin Port</option>
+                		<option value="3"<?php if(get_option("port_type_option") == 2) echo " selected"; ?>>Server Port</option>
                             </select>
                         </td>
                         </tr>

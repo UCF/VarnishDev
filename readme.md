@@ -19,8 +19,8 @@ Buttons:
 Issues, bugs and missing functionality: 
 
 * Settings must be saved before using the plugin. If you type in a new setting and then try to use the plugin it will revert the settings back to the last saved settings. 
-* Right now the plugin only supports Varnish 4.0 commands, Varnish 3 support will be added later. 
+* Right now the plugin only supports Varnish 4.0 commands, Varnish 3 support is currently being added/tested. 
 * Can't use the varnish admin port through the plugin just yet. 
 * Automatic purging of content is supported, however I am still working on this feature so it is not guranteed that every change is being automatically purged. 
 * The Verify Varnish function seems to be able to connect to varnish servers sometimes when incorrect settings are entered.
-* Still testing to see if this works with HTTPS. 
+* HTTPS/SSL support doesn't work as of right now.
