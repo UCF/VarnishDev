@@ -131,9 +131,11 @@ sub vcl_recv {
     # allow PURGE from localhost and ....
     if (req.method == "PURGE") {
                 if (!client.ip ~ purge) {
-                        return(synth(405,"Not allowed."));
+                        #return(synth(405,"Not allowed.")); #This is used for regular purges
+			return(synth(403, "Not allowed")); #This is used for ban luker friendly bans
                 }
-                return (purge);
+		ban("obj.http.x-url ~ " + req.url); #This is used for ban luker friendly bans
+                #return (purge);  #used for regular purges
         }
 
     #If given an uppercase "BAN" command we will ban specific objects

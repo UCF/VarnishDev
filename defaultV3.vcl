@@ -65,9 +65,11 @@ sub vcl_recv {
    
 	if (req.request == "PURGE") {
                 if (!client.ip ~ purge) {
-                        error 405 "Not allowed.";
+                       #error 405 "Not allowed."; # Used for a regular purge
+ 			error 401 "Not allowed"; #Used for a ban lurker friendly purge
                 }
-                return (lookup);
+ 		ban("obj.http.x-url ~ " + req.url); #Used for ban lurker friendly purge #Assumes req.url is a regex. 
+                #return (lookup); #Used for a regular purge
         }
     
 	if (req.request == "BAN") {
